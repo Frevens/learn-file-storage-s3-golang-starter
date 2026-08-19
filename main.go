@@ -7,7 +7,6 @@ import (
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 
-
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -22,11 +21,6 @@ type apiConfig struct {
 	s3Region         string
 	s3CfDistribution string
 	port             string
-}
-
-type thumbnail struct {
-	data      []byte
-	mediaType string
 }
 
 func main() {
