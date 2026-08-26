@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -23,7 +23,7 @@ type apiConfig struct {
 	s3Bucket         string
 	s3Region         string
 	s3CfDistribution string
-	s3Client		 *s3.Client
+	s3Client         *s3.Client
 	port             string
 }
 
@@ -81,13 +81,13 @@ func main() {
 	}
 
 	awsCfg, err := config.LoadDefaultConfig(
-	context.Background(),
-	config.WithRegion(s3Region),
+		context.Background(),
+		config.WithRegion(s3Region),
 	)
 	if err != nil {
 		log.Fatalf("Couldn't load AWS config: %v", err)
 	}
-	
+
 	cfg := apiConfig{
 		s3Client:         s3.NewFromConfig(awsCfg),
 		db:               db,

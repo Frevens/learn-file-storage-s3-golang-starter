@@ -74,29 +74,43 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
 
 	if _, err := io.Copy(tempFile, file); err != nil {
+		_ = tempFile.Close()
 		respondWithError(w, http.StatusInternalServerError, "Failed to save video file", err)
 		return
 	}
 
-	_, err = tempFile.Seek(0, io.SeekStart)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to seek temporary file", err)
+	if err := tempFile.Close(); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to close temporary file", err)
 		return
 	}
 
-	aspectRatio, err := getVideoAspectRatio(tempFile.Name())
+	processedFilePath, err := processVideoForFastStart(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to process video", err)
+		return
+	}
+	defer os.Remove(processedFilePath)
+
+	processedFile, err := os.Open(processedFilePath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to open processed video", err)
+		return
+	}
+	defer processedFile.Close()
+
+	aspectRatio, err := getVideoAspectRatio(processedFilePath)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to determine video aspect ratio", err)
 		return
 	}
 
 	prefix := "other"
-	if aspectRatio == "16:9" {
+	switch aspectRatio {
+	case "16:9":
 		prefix = "landscape"
-	} else if aspectRatio == "9:16" {
+	case "9:16":
 		prefix = "portrait"
 	}
 
@@ -118,7 +132,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		&s3.PutObjectInput{
 			Bucket:      &cfg.s3Bucket,
 			Key:         &key,
-			Body:        tempFile,
+			Body:        processedFile,
 			ContentType: &mediaType,
 		},
 	)
