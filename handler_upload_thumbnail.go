@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"mime"
@@ -72,8 +74,15 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusBadRequest, "Unsupported thumbnail content type", nil)
 		return
 	}
+	randomBytes := make([]byte, 32)
 
-	thumbnailPath := filepath.Join(cfg.assetsRoot, videoID.String()+extensions[0])
+	_, err = rand.Read(randomBytes)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to generate random bytes", err)
+		return
+	}
+	randomString := base64.RawURLEncoding.EncodeToString(randomBytes)
+	thumbnailPath := filepath.Join(cfg.assetsRoot, randomString+extensions[0])
 	thumbnailFile, err := os.Create(thumbnailPath)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create thumbnail file", err)
@@ -86,7 +95,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	thumbnailURL := fmt.Sprintf("http://localhost:%s/assets/%s%s", cfg.port, videoID.String(), extensions[0])
+	thumbnailURL := fmt.Sprintf("http://localhost:%s/assets/%s%s", cfg.port, randomString, extensions[0])
 	videoMetadata.ThumbnailURL = &thumbnailURL
 	if err := cfg.db.UpdateVideo(videoMetadata); err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't update video metadata", err)
