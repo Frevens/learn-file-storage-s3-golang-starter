@@ -1,3 +1,11 @@
+# Presigned URLs
+
+Código desarrollado durante la lección sobre Security.
+
+Esta implementación ya no forma parte de la versión actual de Tubely,
+porque la siguiente etapa utiliza CloudFront.
+
+
 package main
 
 import (
